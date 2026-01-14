@@ -5,13 +5,31 @@ interface Question {
 	answer: number;
 }
 
+class SeededRandom {
+	private seed: number;
+	
+	constructor(seed: number) {
+		this.seed = seed;
+	}
+	
+	next(): number {
+		this.seed = (this.seed * 9301 + 49297) % 233280;
+		return this.seed / 233280;
+	}
+	
+	randomInt(min: number, max: number): number {
+		return Math.floor(this.next() * (max - min + 1)) + min;
+	}
+}
+
 function randomInt(min: number, max: number): number {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function generateAlgebraQuestion(): Question {
-	const a = randomInt(10, 999);
-	const x = randomInt(10, 999);
+function generateAlgebraQuestion(rng: SeededRandom): Question {
+	const a = rng.randomInt(10, 389);
+	const maxX = 399 - a;
+	const x = rng.randomInt(10, maxX);
 	const result = a + x;
 	
 	return {
@@ -20,9 +38,9 @@ function generateAlgebraQuestion(): Question {
 	};
 }
 
-function generateSimpleArithmetic(): Question {
-	const a = randomInt(1, 19);
-	const b = randomInt(1, 20 - a);
+function generateSimpleArithmetic(rng: SeededRandom): Question {
+	const a = rng.randomInt(1, 19);
+	const b = rng.randomInt(1, 20 - a);
 	
 	return {
 		question: `${a} + ${b} = ?`,
@@ -30,9 +48,9 @@ function generateSimpleArithmetic(): Question {
 	};
 }
 
-function generateTensArithmetic(): Question {
-	const a = randomInt(1, 9) * 10;
-	const b = randomInt(1, 9) * 10;
+function generateTensArithmetic(rng: SeededRandom): Question {
+	const a = rng.randomInt(1, 9) * 10;
+	const b = rng.randomInt(1, 9) * 10;
 	
 	return {
 		question: `${a} + ${b} = ?`,
@@ -40,19 +58,20 @@ function generateTensArithmetic(): Question {
 	};
 }
 
-function generateWorksheet(type: QuestionType, count: number = 20): Question[] {
+function generateWorksheet(type: QuestionType, seed: number, count: number = 20): Question[] {
 	const questions: Question[] = [];
+	const rng = new SeededRandom(seed);
 	
 	for (let i = 0; i < count; i++) {
 		switch (type) {
 			case 'algebra':
-				questions.push(generateAlgebraQuestion());
+				questions.push(generateAlgebraQuestion(rng));
 				break;
 			case 'simple-arithmetic':
-				questions.push(generateSimpleArithmetic());
+				questions.push(generateSimpleArithmetic(rng));
 				break;
 			case 'tens-arithmetic':
-				questions.push(generateTensArithmetic());
+				questions.push(generateTensArithmetic(rng));
 				break;
 		}
 	}
@@ -344,6 +363,17 @@ function getHTML(): string {
 	<script>
 		let showingAnswers = false;
 		
+		// Load worksheet from URL params on page load
+		window.addEventListener('DOMContentLoaded', () => {
+			const params = new URLSearchParams(window.location.search);
+			const type = params.get('type');
+			const seed = params.get('seed');
+			
+			if (type && seed) {
+				generateWorksheet(type, parseInt(seed, 10));
+			}
+		});
+		
 		function toggleAnswers() {
 			showingAnswers = !showingAnswers;
 			const worksheet = document.getElementById('worksheet');
@@ -354,9 +384,16 @@ function getHTML(): string {
 			}
 		}
 		
-		async function generateWorksheet(type) {
-			const response = await fetch(\`/api/generate?type=\${type}\`);
+		async function generateWorksheet(type, seed) {
+			const url = seed ? \`/api/generate?type=\${type}&seed=\${seed}\` : \`/api/generate?type=\${type}\`;
+			const response = await fetch(url);
 			const data = await response.json();
+			
+			// Update URL with type and seed
+			const newUrl = new URL(window.location);
+			newUrl.searchParams.set('type', type);
+			newUrl.searchParams.set('seed', data.seed);
+			window.history.pushState({}, '', newUrl);
 			
 			const typeTitles = {
 				'algebra': 'Algebra Practice',
@@ -406,6 +443,7 @@ export default {
 		// API endpoint to generate worksheets
 		if (url.pathname === '/api/generate') {
 			const type = url.searchParams.get('type') as QuestionType;
+			const seedParam = url.searchParams.get('seed');
 			
 			if (!type || !['algebra', 'simple-arithmetic', 'tens-arithmetic'].includes(type)) {
 				return new Response(JSON.stringify({ error: 'Invalid type' }), {
@@ -414,9 +452,10 @@ export default {
 				});
 			}
 			
-			const questions = generateWorksheet(type, 20);
+			const seed = seedParam ? parseInt(seedParam, 10) : Math.floor(Math.random() * 1000000);
+			const questions = generateWorksheet(type, seed, 20);
 			
-			return new Response(JSON.stringify({ questions }), {
+			return new Response(JSON.stringify({ questions, seed }), {
 				headers: {
 					'Content-Type': 'application/json',
 				},
