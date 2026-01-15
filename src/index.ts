@@ -244,10 +244,20 @@ function getHTML(): string {
 				margin: 0.5in;
 			}
 
+			* {
+				-webkit-print-color-adjust: exact;
+				print-color-adjust: exact;
+			}
+
+			html {
+				font-size: 16px !important;
+			}
+
 			body {
 				background: white;
 				padding: 0;
 				margin: 0;
+				overflow: hidden;
 			}
 
 			.container {
@@ -256,6 +266,7 @@ function getHTML(): string {
 				margin: 0;
 				max-width: 100%;
 				border-radius: 0;
+				overflow: hidden;
 			}
 
 			.controls {
@@ -272,28 +283,34 @@ function getHTML(): string {
 
 			#worksheet {
 				margin-top: 0;
+				overflow: hidden;
 			}
 
 			.worksheet-header {
-				margin-bottom: 0.75rem;
-				padding-bottom: 0.5rem;
+				margin-bottom: 10pt;
+				padding-bottom: 4pt;
 				border-bottom: 2px solid #000;
 			}
 
 			.worksheet-header h2 {
-				font-size: 1.2rem;
+				font-size: 14pt;
 				color: #000;
+				margin: 0;
 			}
 
 			.worksheet-header .date {
 				color: #000;
-				font-size: 0.85rem;
-				margin-top: 0.25rem;
+				font-size: 10pt;
+				margin-top: 3pt;
 			}
 
 			.questions {
-				gap: 0.4rem;
+				gap: 4pt;
 				padding: 0;
+				row-gap: 4pt;
+				column-gap: 6pt;
+				width: 100%;
+				overflow: hidden;
 			}
 
 			.question {
@@ -301,26 +318,31 @@ function getHTML(): string {
 				page-break-inside: avoid;
 				background: white;
 				border-left: 2px solid #000;
-				padding: 0.4rem 0.5rem;
+				padding: 3pt 4pt;
 				border-radius: 0;
+				margin: 0;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			.question-number {
 				color: #000;
-				font-size: 0.75rem;
-				margin-bottom: 0.15rem;
+				font-size: 9pt;
+				margin-bottom: 2pt;
+				line-height: 1.15;
 			}
 
 			.question-text {
-				font-size: 0.95rem;
+				font-size: 11pt;
 				color: #000;
-				margin-bottom: 0.15rem;
+				margin-bottom: 2pt;
+				line-height: 1.25;
 			}
 
 			.answer-line {
 				border: 1px solid #000;
-				padding: 0.3rem 0.4rem;
-				min-height: 1.8rem;
+				padding: 2pt 3pt;
+				min-height: 18pt;
 				border-radius: 0;
 				background: white;
 			}
